@@ -6,25 +6,36 @@ class PWM_DAC:
         self.dynamic_range = dynamic_range
         self.verbose = verbose
 
-        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.gpio_pin, GPIO.OUT)
+        GPIO.setup(gpio_pin, GPIO.OUT)
+        self.pwm = GPIO.PWM(gpio_pin, pwm_frequency)
+        self.pwm.start(0)
 
         
 
     def deinit(self):
-        GPIO.output(self.gpio_pin, 0)
         GPIO.cleanup()
-    def set_number(self, number):
-        k = list(map(int, bin(number)[2::]))
-        while len(k)<8:
-            k = [0] + k
-        GPIO.output(self.gpio_pin, k)
-        print(k)
+        
     def set_voltage(self, voltage):
         if not(0.0 <= voltage <= self.dynamic_range):
-            print(f"Напряжение выходит за динамический диапазон ЦАП (0.00 - {d:.2f} B")
+            print(f"Напряжение выходит за динамический диапазон ЦАП (0.00 - {self.dynamic_range:.2f} B")
             print("Устанавливаем 0.00 В")
-            self.set_number(0)
-        z = int(voltage / self.dynamic_range * 255)
-        self.set_number(z)
+            self.pwm.ChangeDutyCycle(0)
+        else:
+            duty_cycle = voltage / self.dynamic_range * 100
+            self.pwm.ChangeDutyCycle(duty_cycle)
+
+if __name__ == "__main__":
+
+    dac = PWM_DAC(12, 500, 3.298, True)
+    try:
+
+        while True:
+            try:
+                voltage = float(input("Введите напряжение: "))
+                dac.set_voltage(voltage)
+
+            except ValueError:
+                print("Вы ввели не число, попробуйте ещё раз\n")
+    finally:
+        dac.deinit()
