@@ -15,12 +15,6 @@ class MCP4725:
         self.bus.close()
 
     def set_number(self, number):
-        if not isinstance(number, int):
-            print("Только целые можно")
-
-        if not (0 <= number <= 4095):
-            print("Число выходит за разрядность")
-
         first_byte = self.wm | self.pds | number >> 8
         second_byte = number & 0xFF
         self.bus.write_byte_data(0x61, first_byte, second_byte)
@@ -33,9 +27,19 @@ class MCP4725:
             print("Значение вне диапазона, установлено 0.00 В")
             number = 0
         else:
-            number = round(voltage/dynamic_range * 4095)
+            number = round(voltage/self.dynamic_range * 4095)
         self.set_number(number)
 
 if __name__ == "__main__":
 
     dac = MCP4725(5.0, 0x61, True)
+
+    while True:
+        try:
+            voltage = float(input("введите напряжение в вольтах: "))
+            dac.set_voltage(voltage)
+
+        except ValueError:
+            print("это не число")
+        
+    dac.deinit()
